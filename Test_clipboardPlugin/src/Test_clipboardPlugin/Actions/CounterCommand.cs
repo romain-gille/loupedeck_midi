@@ -2,8 +2,8 @@ namespace Loupedeck.Test_clipboardPlugin
 {
     using System;
     using Loupedeck;
-    using Melanchall.DryWetMidi.Multimedia;
-    using Melanchall.DryWetMidi.Core;
+    //using Melanchall.DryWetMidi.Multimedia;
+    //using Melanchall.DryWetMidi.Core;
 
     // This class implements an example command that counts button presses.
 
@@ -23,25 +23,25 @@ namespace Loupedeck.Test_clipboardPlugin
         {
             this._counter++;
 
-            using (var outputDevice = OutputDevice.GetByName("midi1"))
-            {
-                outputDevice.SendEvent(
-                new NoteOnEvent(
-                    new Melanchall.DryWetMidi.Common.SevenBitNumber(2),
-                    new Melanchall.DryWetMidi.Common.SevenBitNumber(127)
-                    )
-                );
-                outputDevice.SendEvent(
-                new NoteOffEvent(
-                    new Melanchall.DryWetMidi.Common.SevenBitNumber(2),
-                    new Melanchall.DryWetMidi.Common.SevenBitNumber(127)
-                    )
-                );
-            }
+            //using (var outputDevice = OutputDevice.GetByName("midi1"))
+            //{
+            //    outputDevice.SendEvent(
+            //    new NoteOnEvent(
+            //        new Melanchall.DryWetMidi.Common.SevenBitNumber(2),
+            //        new Melanchall.DryWetMidi.Common.SevenBitNumber(127)
+            //        )
+            //    );
+            //    outputDevice.SendEvent(
+            //    new NoteOffEvent(
+            //        new Melanchall.DryWetMidi.Common.SevenBitNumber(2),
+            //        new Melanchall.DryWetMidi.Common.SevenBitNumber(127)
+            //        )
+            //    );
+            //}
             this.ActionImageChanged(); // Notify the Loupedeck service that the command display name and/or image has changed.
         }
 
-        // This method is called when Loupedeck needs to show the command on the console or the UI.
+        // This method is called when Loupedeck needs to show the command on the console or the UI. 
         protected override String GetCommandDisplayName(String actionParameter, PluginImageSize imageSize) =>
             $"  Counter{Environment.NewLine}{this._counter}";
     }
