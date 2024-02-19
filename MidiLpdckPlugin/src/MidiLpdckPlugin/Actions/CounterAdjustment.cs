@@ -10,10 +10,7 @@ namespace Loupedeck.MidiLpdckPlugin
     public class CounterAdjustment : PluginDynamicAdjustment
     {
 
-        //private MidiLpdckPlugin _plugin;
-        // This variable holds the current value of the counter.
-        private Byte _counter = 0;
-        //private readonly ConcurrentDictionary<String, dynamic> _midiValues;
+        private readonly ConcurrentDictionary<String, byte> _midiValues;
         private readonly OutputDevice outputDeviceNew;
         //private readonly VirtualDevice myVirtualDevice;
         // Initializes the adjustment class.
@@ -21,22 +18,23 @@ namespace Loupedeck.MidiLpdckPlugin
         public CounterAdjustment()
             : base(displayName: "Midi rotation", description: "Change midi value on rotation", groupName: "Adjustments", hasReset: true)
         {
-            this.MakeProfileAction("text;Param1");
-            //this._midiValues = new ConcurrentDictionary<String, dynamic>();
+            this.MakeProfileAction("1;Midi note (between 0 and 127)");
+            this._midiValues = new ConcurrentDictionary<String, byte>();
             //this.myVirtualDevice = VirtualDevice.Create("MyDevice");
             this.outputDeviceNew = OutputDevice.GetByName("lpdckmidi");
         }
-        //protected override Boolean OnLoad()
-        //{
-        //    this._plugin = base.Plugin as MidiLpdckPlugin;
-        //    this._plugin.AdjustmentValueChanged += (sender, e) => this.onAdjustment(sender, e);
-        //    return base.OnLoad();
-        //}
 
-        //public void onAdjustment(object sender, ActionStateChangedEventArgs e)
-        //{
-        //    this.ApplyAdjustment("",1);
-        //}
+
+        private string giveMidiValue(string midiNote)
+        {
+            Byte valtosend = 10;
+            if (this._midiValues.TryGetValue(midiNote, out var val))
+            { valtosend = val; }
+            else
+            { valtosend = 100; }
+
+            return midiNote + ":" +  valtosend.ToString();
+        }
 
         ~CounterAdjustment() {
             this.outputDeviceNew.Dispose();
@@ -45,11 +43,16 @@ namespace Loupedeck.MidiLpdckPlugin
         // This method is called when the adjustment is executed.
         protected override void ApplyAdjustment(String actionParameter, Int32 diff)
         {
-            Byte midiVal = 3;
-
-            try
+            if (this._midiValues.TryGetValue(actionParameter, out var oldMidiVal))
+            { }else
             {
-                midiVal = (byte)int.Parse(actionParameter);
+                oldMidiVal = 35;
+            }
+
+            Byte midiNote= 1;
+                    try
+            {
+                 midiNote = (byte)int.Parse(actionParameter);
             }
             catch (FormatException)
             {
@@ -60,22 +63,32 @@ namespace Loupedeck.MidiLpdckPlugin
                 Console.WriteLine("Input string represents a number that is too large or too small for an int32.");
             }
 
+            Byte newMidiVal;
 
-
-            if (this._counter + diff < 0)
-            { this._counter = 0; }
+            if (oldMidiVal + diff < 0)
+            { newMidiVal = 0; }
             else if
-             (this._counter + diff > 127)
-            { this._counter = 127; }
+             (oldMidiVal + diff > 127)
+            { newMidiVal = 127; }
             else
-            { this._counter += (byte)diff; }
+            { newMidiVal = (byte)(oldMidiVal + diff); }
+
+            if (this._midiValues.ContainsKey(actionParameter))
+            { this._midiValues[actionParameter] = newMidiVal; }
+            else
+            { 
+            this._midiValues.TryAdd(actionParameter, newMidiVal);
+            }
+
 
             this.outputDeviceNew.SendEvent(
             new ControlChangeEvent(
-                new Melanchall.DryWetMidi.Common.SevenBitNumber(midiVal),
-                new Melanchall.DryWetMidi.Common.SevenBitNumber(this._counter)
+                new Melanchall.DryWetMidi.Common.SevenBitNumber(midiNote),
+                new Melanchall.DryWetMidi.Common.SevenBitNumber(newMidiVal)
                 )
             );
+
+
             this.ActionImageChanged(); // Notify the Loupedeck service that the command display name and/or image has changed.
 
             this.AdjustmentValueChanged(); // Notify the Loupedeck service that the adjustment value has changed.
@@ -84,14 +97,13 @@ namespace Loupedeck.MidiLpdckPlugin
         // This method is called when the reset command related to the adjustment is executed.
         protected override void RunCommand(String actionParameter)
         {
-            this._counter = 0; // Reset the counter.
             this.AdjustmentValueChanged(); // Notify the Loupedeck service that the adjustment value has changed.
         }
 
         protected override String GetCommandDisplayName(String actionParameter, PluginImageSize imageSize) =>
-    $"{this._counter}";
+    $"{this.giveMidiValue(actionParameter)}";
 
         // Returns the adjustment value that is shown next to the dial.
-        protected override String GetAdjustmentValue(String actionParameter) => this._counter.ToString();
+        protected override String GetAdjustmentValue(String actionParameter) => this.giveMidiValue(actionParameter);
     }
 }
