@@ -22,6 +22,7 @@ namespace Loupedeck.MidiLpdckPlugin
             this._midiValues = new ConcurrentDictionary<String, byte>();
             //this.myVirtualDevice = VirtualDevice.Create("MyDevice");
             this.outputDeviceNew = OutputDevice.GetByName("lpdckmidi");
+            
         }
 
 
@@ -32,8 +33,8 @@ namespace Loupedeck.MidiLpdckPlugin
             { valtosend = val; }
             else
             { valtosend = 100; }
-
-            return midiNote + ":" +  valtosend.ToString();
+            double scaledValue = valtosend / 12.7;
+            return scaledValue.ToString("0.0");
         }
 
         ~CounterAdjustment() {
@@ -90,8 +91,7 @@ namespace Loupedeck.MidiLpdckPlugin
 
 
             this.ActionImageChanged(); // Notify the Loupedeck service that the command display name and/or image has changed.
-
-            this.AdjustmentValueChanged(); // Notify the Loupedeck service that the adjustment value has changed.
+            //this.AdjustmentValueChanged(); // Notify the Loupedeck service that the adjustment value has changed.
         }
 
         // This method is called when the reset command related to the adjustment is executed.
@@ -99,11 +99,20 @@ namespace Loupedeck.MidiLpdckPlugin
         {
             this.AdjustmentValueChanged(); // Notify the Loupedeck service that the adjustment value has changed.
         }
+    //    protected override String GetCommandDisplayName(String actionParameter, PluginImageSize imageSize) =>
+    //$"{this.giveMidiValue(actionParameter)}";
 
-        protected override String GetCommandDisplayName(String actionParameter, PluginImageSize imageSize) =>
-    $"{this.giveMidiValue(actionParameter)}";
+        protected override BitmapImage GetCommandImage(string actionParameter, PluginImageSize imageSize)
+        {
+            using (BitmapBuilder bitmapBuilder = new BitmapBuilder(imageSize))
+            {
+                bitmapBuilder.Clear(BitmapColor.Black);
+                bitmapBuilder.DrawText($"{this.giveMidiValue(actionParameter)}", BitmapColor.White, 26);
+                return bitmapBuilder.ToImage();
+            }
+        }
 
         // Returns the adjustment value that is shown next to the dial.
-        protected override String GetAdjustmentValue(String actionParameter) => this.giveMidiValue(actionParameter);
+        //protected override String GetAdjustmentValue(String actionParameter) => this.giveMidiValue(actionParameter);
     }
 }
