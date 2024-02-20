@@ -9,7 +9,7 @@ namespace Loupedeck.MidiLpdckPlugin
 
     public class CounterAdjustment : PluginDynamicAdjustment
     {
-
+        private MidiLpdckPlugin _plugin;
         private readonly ConcurrentDictionary<String, byte> _midiValues;
         private readonly OutputDevice outputDeviceNew;
         //private readonly VirtualDevice myVirtualDevice;
@@ -18,23 +18,36 @@ namespace Loupedeck.MidiLpdckPlugin
         public CounterAdjustment()
             : base(displayName: "Midi rotation", description: "Change midi value on rotation", groupName: "Adjustments", hasReset: true)
         {
-            this.MakeProfileAction("1;Midi note (between 0 and 127)");
+           
+            this.MakeProfileAction("text;Midi note");
             this._midiValues = new ConcurrentDictionary<String, byte>();
             //this.myVirtualDevice = VirtualDevice.Create("MyDevice");
             this.outputDeviceNew = OutputDevice.GetByName("lpdckmidi");
-            
+        }
+
+        protected override Boolean OnLoad()
+        {
+            this._plugin = base.Plugin as MidiLpdckPlugin;
+            return base.OnLoad();
         }
 
 
         private string giveMidiValue(string midiNote)
         {
-            Byte valtosend = 10;
+            Byte valtosend = 63;
             if (this._midiValues.TryGetValue(midiNote, out var val))
             { valtosend = val; }
             else
-            { valtosend = 100; }
+            { valtosend = 63; }
             double scaledValue = valtosend / 12.7;
-            return scaledValue.ToString("0.0");
+
+            if(valtosend == 127)
+            {
+                return scaledValue.ToString("0");
+            }
+            else
+            { return scaledValue.ToString("0.0"); }
+            
         }
 
         ~CounterAdjustment() {
@@ -47,10 +60,10 @@ namespace Loupedeck.MidiLpdckPlugin
             if (this._midiValues.TryGetValue(actionParameter, out var oldMidiVal))
             { }else
             {
-                oldMidiVal = 35;
+                oldMidiVal = 63;
             }
 
-            Byte midiNote= 1;
+            Byte midiNote= 63;
                     try
             {
                  midiNote = (byte)int.Parse(actionParameter);
@@ -91,7 +104,6 @@ namespace Loupedeck.MidiLpdckPlugin
 
 
             this.ActionImageChanged(); // Notify the Loupedeck service that the command display name and/or image has changed.
-            //this.AdjustmentValueChanged(); // Notify the Loupedeck service that the adjustment value has changed.
         }
 
         // This method is called when the reset command related to the adjustment is executed.
@@ -99,20 +111,18 @@ namespace Loupedeck.MidiLpdckPlugin
         {
             this.AdjustmentValueChanged(); // Notify the Loupedeck service that the adjustment value has changed.
         }
-    //    protected override String GetCommandDisplayName(String actionParameter, PluginImageSize imageSize) =>
-    //$"{this.giveMidiValue(actionParameter)}";
+
 
         protected override BitmapImage GetCommandImage(string actionParameter, PluginImageSize imageSize)
         {
             using (BitmapBuilder bitmapBuilder = new BitmapBuilder(imageSize))
             {
                 bitmapBuilder.Clear(BitmapColor.Black);
-                bitmapBuilder.DrawText($"{this.giveMidiValue(actionParameter)}", BitmapColor.White, 26);
+                bitmapBuilder.DrawText($"{this.giveMidiValue(actionParameter)}", BitmapColor.White, 30);
                 return bitmapBuilder.ToImage();
             }
         }
 
-        // Returns the adjustment value that is shown next to the dial.
-        //protected override String GetAdjustmentValue(String actionParameter) => this.giveMidiValue(actionParameter);
+
     }
 }
